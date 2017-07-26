@@ -1,0 +1,25 @@
+California, Alameda County
+California, Santa Barbara County
+California, Santa Clara County
+California, Sonoma County
+Colorado, Broomfield County
+Colorado, Eagle County
+Florida, Monroe County
+Georgia, Decatur County
+Georgia, Dodge County
+Georgia, Fulton County
+Georgia, Glynn County
+Indiana, Monroe County
+Minnesota, Carver County
+Mississippi, Madison County
+Mississippi, Warren County
+New Mexico, Sierra County
+Oklahoma, Craig County
+Pennsylvania, Delaware County
+Texas, Brown County
+Texas, Fort Bend County
+Virginia, Arlington County
+Virginia, Chesterfield County
+Virginia, Prince William County
+Virginia, Alexandria city
+Virginia, Fairfax city
