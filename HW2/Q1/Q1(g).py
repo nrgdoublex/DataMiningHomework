@@ -1,62 +1,56 @@
+# -*- coding: latin-1 -*-
+from scipy.stats import beta
+import matplotlib.pyplot as plt
 import numpy as np
-import scipy.stats as st
+import pandas as pd
+from collections import defaultdict
 
-#constants
-nodata = "No Data"
-scale = 100
-confidence_level = 0.05
-threshold = st.norm.ppf(confidence_level)
-diff = 0.00
+# Use Thompson Sampling algorithm
+datafile = "Q1.csv"
+columnname = {'number': 'Number2013', 'percent': 'Percent2013'
+           , 'number.1': 'Number2012', 'percent.1': 'Percent2012'
+           , 'number.2': 'Number2004', 'percent.2': 'Percent2004'}
 
-with open('Q1.csv') as f:
-    lines = f.readlines()
+# read csv and clean data
+df = pd.read_csv(datafile, encoding='latin-1', header=1)
+df.rename(columns=columnname, inplace=True)
+for column in ['Number2013','Percent2013']:
+    df[column] = df[column].apply(pd.to_numeric, errors='coerce')
+df['Percent2013'] = df['Percent2013'].div(100)
 
-# Data lists
-state = []
-county = []
-num_2013 = []
-per_2013 = []
-num_2012 = []
-per_2012 = []
-num_2004 = []
-per_2004 = []
-for i in range(2,3148):
-    line = lines[i].rstrip().split(',')
-    state.append(line[0])
-    county.append(line[2])
-    if line[3] == nodata:
-        num_2013.append(0)
-    else:
-        num_2013.append(float(line[3]))
-        
-    if line[4]==nodata:
-        per_2013.append(0)
-    else:
-        per_2013.append(float(line[4])/100)
-                
-    if line[5]==nodata:
-        num_2012.append(0)
-    else:
-        num_2012.append(float(line[5]))
-                
-    if line[6]==nodata:
-        per_2012.append(0)
-    else:
-        per_2012.append(float(line[6])/100)
-                
-    if line[7]==nodata:
-        num_2004.append(0)
-    else:
-        num_2004.append(float(line[7]))
-                
-    if line[8]==nodata:
-        per_2004.append(0)
-    else:
-        per_2004.append(float(line[8])/100)
-        
-print 'The county with largest empirical rate in 2004 is %s,%s, with rate %f' \
-    %(state[np.argmax(per_2004)],county[np.argmax(per_2004)],np.max(per_2004))
-print 'The county with largest empirical rate in 2012 is %s,%s, with rate %f' \
-    %(state[np.argmax(per_2012)],county[np.argmax(per_2012)],np.max(per_2012))
-print 'The county with largest empirical rate in 2013 is %s,%s, with rate %f' \
-    %(state[np.argmax(per_2013)],county[np.argmax(per_2013)],np.max(per_2013))
+# Create a dataframe with the variables of interest without the invalid rows (need to replace "No Value" by "NA" in the original file)
+wdf = df[['State','County','Number2013','Percent2013']].copy().dropna(axis=0)
+wdf.index = xrange(wdf.shape[0])
+# Number of people in county
+wdf['Population2013'] =  wdf.Number2013.div(wdf.Percent2013).apply(lambda x: int(x))
+
+# Matrix of counties x 1000 posterior samples
+samples = np.zeros(shape=(wdf.shape[0],1000))
+# Give index to county names
+county_to_idx = defaultdict(lambda:len(county_to_idx))
+# Revese lookup
+idx_to_county = {}
+
+# Beta prior (hyper)parameters, better to add strong priors towards low rates
+a, b = 1, 1
+for i in wdf.index:
+    # Sample 1000 values from posterior distribution, Beta(a+#Obese, b+#NotObese)
+    county = wdf.iloc[i,:]
+    obesity2013 = float(county['Number2013'])
+    percent2013 = float(county['Percent2013'])
+    population2013 = float(county['Population2013'])
+    samples[i,] = beta.rvs(a+obesity2013,b+population2013-obesity2013,size=samples.shape[1])
+
+
+# find most obese county on each run
+most_obese_runs = np.argmax(samples,axis=0)
+
+# Find frequences of counties have been ranked most obese
+counts = np.bincount(most_obese_runs)
+# Find idex of most frequent county
+most_obese_ranking = np.argmax(counts) 
+
+
+print("Most Obese County:\n *** "+wdf.iloc[most_obese_ranking,:]['State']+','+ wdf.iloc[most_obese_ranking,:]['County']
+      +" = ranked first "+str(counts[most_obese_ranking])+" times out of 1000 runs")
+

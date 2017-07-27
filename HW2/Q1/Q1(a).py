@@ -1,84 +1,37 @@
+# -*- coding: latin-1 -*-
+
 import numpy as np
-import scipy.stats as st
+import scipy.stats as stats
+import pandas as pd
 
-#constants
-nodata = "No Data"
+datafile = "Q1.csv"
+columnname = {'number': 'Number2013', 'percent': 'Percent2013'
+           , 'number.1': 'Number2012', 'percent.1': 'Percent2012'
+           , 'number.2': 'Number2004', 'percent.2': 'Percent2004'}
 
-with open('Q1.csv') as f:
-    lines = f.readlines()
+# read csv and clean data
+df = pd.read_csv(datafile, encoding='latin1', header=1)
+df.rename(columns=columnname, inplace=True)
+for column in ['Number2013','Percent2013','Number2012','Percent2012','Number2004','Percent2004']:
+    df[column] = df[column].apply(pd.to_numeric, errors='coerce')
+df['Percent2013'] = df['Percent2013'].div(100)
+df['Percent2012'] = df['Percent2012'].div(100)
+df['Percent2004'] = df['Percent2004'].div(100)
+df['TotalPopulation2013'] = df.Number2013.div(df.Percent2013).apply(lambda x: int(x) if pd.notnull(x) else x)
+df['TotalPopulation2012'] = df.Number2012.div(df.Percent2012).apply(lambda x: int(x) if pd.notnull(x) else x)
 
-# Data lists
-state = []
-county = []
-num_2013 = []
-per_2013 = []
-num_2012 = []
-per_2012 = []
-num_2004 = []
-per_2004 = []
-for i in range(2,3148):
-    line = lines[i].rstrip().split(',')
-    state.append(line[0])
-    county.append(line[2])
-    if line[3] == nodata:
-        num_2013.append(0)
-    else:
-        num_2013.append(float(line[3]))
-        
-    if line[4]==nodata:
-        per_2013.append(0)
-    else:
-        per_2013.append(float(line[4])/100)
-                
-    if line[5]==nodata:
-        num_2012.append(0)
-    else:
-        num_2012.append(float(line[5]))
-                
-    if line[6]==nodata:
-        per_2012.append(0)
-    else:
-        per_2012.append(float(line[6])/100)
-                
-    if line[7]==nodata:
-        num_2004.append(0)
-    else:
-        num_2004.append(float(line[7]))
-                
-    if line[8]==nodata:
-        per_2004.append(0)
-    else:
-        per_2004.append(float(line[8])/100)
+# t-test
+totalpopu2013 = df['TotalPopulation2013'].sum()
+totalpopu2012 = df['TotalPopulation2012'].sum()
+obesitypopu2013 = df['Number2013'].sum()
+obesitypopu2012 = df['Number2012'].sum()
+totalper2013 = obesitypopu2013 / totalpopu2013
+totalper2012 = obesitypopu2012 / totalpopu2012
+se2013 = totalper2013 * (1 - totalper2013)
+se2012 = totalper2012 * (1 - totalper2012)
+probcombined = (obesitypopu2013 + obesitypopu2012) / (totalpopu2013 + totalpopu2012)
+totalse = np.sqrt(se2013/totalpopu2013 + se2012/totalpopu2012)
+t_score = (totalper2013 - totalper2012) / totalse
 
-#calculate US population
-total_popu_2013 = 0
-obe_popu_2013 = 0
-totalper_2013 = float(0)
-
-total_popu_2012 = 0
-obe_popu_2012 = 0
-totalper_2012 = float(0)
-for i in range(0,len(num_2013)):
-    if num_2013[i] == 0 or per_2013[i] == 0:
-        continue
-    else:   
-        total_popu_2013 += num_2013[i]/per_2013[i]
-        obe_popu_2013 += num_2013[i]
-for i in range(0,len(num_2012)):
-    if num_2012[i] == 0 or per_2012[i] == 0:
-        continue
-    else:   
-        total_popu_2012 += num_2012[i]/per_2012[i]
-        obe_popu_2012 += num_2012[i]
-        
-# calculate overall rate
-totalper_2013 = float(np.sum(num_2013))/total_popu_2013
-totalper_2012 = float(np.sum(num_2012))/total_popu_2012
-total_proba = (obe_popu_2013+obe_popu_2012)/(total_popu_2013+total_popu_2012)
-se = np.sqrt(total_proba*(1-total_proba)*(1/total_popu_2013+1/total_popu_2012))
-z_score = (totalper_2013 - totalper_2012)/se
-
-print 'The z-score for US population is %s' %z_score
-print 'The z-score for 0.95 confidence is %s' %st.norm.ppf(0.95)
-
-#print binom.sf(np.sum(num_2013)/10000,round(popu_2013/10000),totalper_2012)
+print 'The t-score for US population is %s' %t_score
+print 'The t-score for 0.95 confidence is %s' %stats.norm.ppf(0.95)

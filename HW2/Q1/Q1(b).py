@@ -1,73 +1,34 @@
+# -*- coding: latin-1 -*-
+
 import numpy as np
-import scipy.stats as st
+import scipy.stats as stats
+import pandas as pd
+from Statfunction import ttest
+from Statfunction import degreefreedom
 
-#z-score function
-def zscore(pos_1,p1,pos_2,p2):
-    popu_1 = pos_1/p1
-    popu_2 = pos_2/p2
-    total_proba = (pos_1+pos_2)/(popu_1+popu_2)
-    se = np.sqrt(total_proba*(1-total_proba)*(1/popu_1+1/popu_2))
-    z_score = (p1 - p2)/se
-    return z_score
-    
 
-#constants
-nodata = "No Data"
-scale = 100
+datafile = "Q1.csv"
+columnname = {'number': 'Number2013', 'percent': 'Percent2013'
+           , 'number.1': 'Number2012', 'percent.1': 'Percent2012'
+           , 'number.2': 'Number2004', 'percent.2': 'Percent2004'}
 
-with open('Q1.csv') as f:
-    lines = f.readlines()
+# read csv and clean data
+df = pd.read_csv(datafile, encoding='latin1', header=1)
+df.rename(columns=columnname, inplace=True)
+for column in ['Number2013','Percent2013','Number2012','Percent2012','Number2004','Percent2004']:
+    df[column] = df[column].apply(pd.to_numeric, errors='coerce')
+df['Percent2013'] = df['Percent2013'].div(100)
+df['Percent2012'] = df['Percent2012'].div(100)
+df['Percent2004'] = df['Percent2004'].div(100)
+tippecanoe = df.loc[(df['State'] == "Indiana") & (df['County'] == "Tippecanoe County")]
+LA = df.loc[(df['State'] == "California") & (df['County'] == "Los Angeles County")]
 
-# Data lists
-state = []
-county = []
-num_2013 = []
-per_2013 = []
-num_2012 = []
-per_2012 = []
-num_2004 = []
-per_2004 = []
-for i in range(2,3148):
-    line = lines[i].rstrip().split(',')
-    state.append(line[0])
-    county.append(line[2])
-    if line[3] == nodata:
-        num_2013.append(0)
-    else:
-        num_2013.append(float(line[3]))
-        
-    if line[4]==nodata:
-        per_2013.append(0)
-    else:
-        per_2013.append(float(line[4])/100)
-                
-    if line[5]==nodata:
-        num_2012.append(0)
-    else:
-        num_2012.append(float(line[5]))
-                
-    if line[6]==nodata:
-        per_2012.append(0)
-    else:
-        per_2012.append(float(line[6])/100)
-                
-    if line[7]==nodata:
-        num_2004.append(0)
-    else:
-        num_2004.append(float(line[7]))
-                
-    if line[8]==nodata:
-        per_2004.append(0)
-    else:
-        per_2004.append(float(line[8])/100)
-        
-#find index of Tippocanoe and Los Angeles county
-tippecanoe = county.index("Tippecanoe County")
-la = county.index("Los Angeles County")
 
-#find z-score for each year
-print 'The z-score in 2013 is %s' %zscore(num_2013[tippecanoe],per_2013[tippecanoe],num_2013[la],per_2013[la])
-print 'The z-score in 2012 is %s' %zscore(num_2012[tippecanoe],per_2012[tippecanoe],num_2012[la],per_2012[la])
-print 'The z-score in 2004 is %s' %zscore(num_2004[tippecanoe],per_2004[tippecanoe],num_2004[la],per_2004[la])
-
-print 'The z-score for 0.95 confidence is %s' %st.norm.ppf(0.95)
+# t-test
+# we just use year 2013 as example
+tippepopu2013 = float(tippecanoe.loc[:,'Number2013'])
+tippeper2013 = float(tippecanoe.loc[:,'Percent2013'])
+LApopu2013 = float(LA.loc[:,'Number2013'])
+LAper2013 = float(LA.loc[:,'Percent2013'])
+print "t-score is %f" % ttest(tippepopu2013, tippeper2013, LApopu2013, LAper2013, 0)
+print "Degree of Freedom is %f" % degreefreedom(tippepopu2013, tippeper2013, LApopu2013, LAper2013)
