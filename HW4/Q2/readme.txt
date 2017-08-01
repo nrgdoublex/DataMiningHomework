@@ -9,3 +9,4 @@ Q2(v)_tensor.py: Convert raw dataset into 3-mode tensor for PARAFAC.
 Q2(v)_validation.py: Use cross validation to decide the suitable rank for PARAFAC
 Q2(v)_predict.py: Perform PARAFAC with optimal rank and then predict who like Pulp Fiction movie.
 Q2(vi).py: Predict the actual rating each user would give to Pulp Fiction movie by PARAFAC.
+CV.py: help functions for cross validation.
