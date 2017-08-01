@@ -28,16 +28,13 @@ likeorunlike_vec = np.vectorize(likeorunlike)
 #read training data
 df_train = pd.read_csv("movies_training.csv")
 df_train_trim = df_train.drop('user_id',axis=1)
-matrix_train = df_train_trim.as_matrix()
 
 #read movie-category data
 df_cate = pd.read_csv("movie_in_training.csv")
 df_cate = df_cate.drop("Movie_name",axis=1)
-matrix_cate = df_cate.as_matrix()
-#print(df_cate.columns.values)
 
 #each entry indicates how many times a user like a genre
-user_cate = np.dot(matrix_train,matrix_cate)
+user_cate = np.dot(df_train_trim,df_cate)
 #get maximum entry index
 argmax = np.argmax(user_cate, axis=1)
 

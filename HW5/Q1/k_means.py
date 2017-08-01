@@ -52,8 +52,7 @@ total_data = df_user_cate_trim.as_matrix()
 #k-means
 #initilizize centroids
 centroids = initialpts(num_cluster,total_data)
-#centroid_idx = np.random.randint(0,training.shape[0],size=(num_cluster))
-#centroids = training[centroid_idx]
+
 
 labels = np.zeros(total_data.shape[0])
 #k-means
